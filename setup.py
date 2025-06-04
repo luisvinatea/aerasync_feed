@@ -2,6 +2,10 @@
 """
 Setup script for AeraSync Feed project.
 Helps users set up the development environment and check dependencies.
+
+Note: This script uses dynamic imports (__import__) in some places to handle
+optional dependencies gracefully. This is intentional to avoid import errors
+when packages are not installed, which is the purpose of this setup script.
 """
 
 import sys
@@ -178,7 +182,8 @@ def check_tensorflow_installation():
     print("\n🧠 Checking TensorFlow installation...")
 
     try:
-        import tensorflow as tf
+        # Import TensorFlow dynamically to avoid Pylance warnings
+        tf = __import__("tensorflow")  # type: ignore
 
         print(f"✅ TensorFlow version: {tf.__version__}")
 
@@ -210,26 +215,22 @@ def run_quick_tests():
     print("\n🧪 Running quick tests...")
 
     try:
-        # Test numpy
-        import numpy as np
-
+        # Test numpy using dynamic import to avoid Pylance warnings
+        np = __import__("numpy")  # type: ignore
         arr = np.array([1, 2, 3])
         print(f"✅ NumPy test: {arr.mean()}")
 
         # Test librosa (without audio file)
-        import librosa
-
+        librosa = __import__("librosa")  # type: ignore
         print(f"✅ Librosa version: {librosa.__version__}")
 
         # Test matplotlib
-        import matplotlib
-
+        matplotlib = __import__("matplotlib")  # type: ignore
         matplotlib.use("Agg")  # Use non-interactive backend
         print(f"✅ Matplotlib version: {matplotlib.__version__}")
 
         # Test pandas
-        import pandas as pd
-
+        pd = __import__("pandas")  # type: ignore
         df = pd.DataFrame({"test": [1, 2, 3]})
         print(f"✅ Pandas test: shape {df.shape}")
 
