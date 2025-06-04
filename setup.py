@@ -4,11 +4,9 @@ Setup script for AeraSync Feed project.
 Helps users set up the development environment and check dependencies.
 """
 
-import os
 import sys
 import subprocess
 import platform
-import pkg_resources
 from pathlib import Path
 
 
@@ -57,7 +55,6 @@ def check_audio_dependencies():
     system = platform.system().lower()
 
     if system == "linux":
-        deps = ["portaudio19-dev", "python3-pyaudio"]
         print(
             "   On Ubuntu/Debian, install: sudo apt-get install portaudio19-dev python3-dev"
         )
@@ -73,30 +70,51 @@ def check_audio_dependencies():
 
 
 def install_requirements():
-    """Install Python requirements."""
+    """Install Python requirements with flexible options."""
     print("\n📦 Installing Python requirements...")
 
-    requirements_file = Path(__file__).parent / "requirements.txt"
+    base_dir = Path(__file__).parent
 
-    if not requirements_file.exists():
-        print("❌ requirements.txt not found")
-        return False
+    # Try installing requirements in order of preference
+    requirements_files = [
+        ("requirements-base.txt", "base dependencies"),
+        ("requirements-tensorflow.txt", "TensorFlow (for training)"),
+        ("requirements-audio.txt", "audio recording support"),
+    ]
 
-    try:
-        cmd = [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            str(requirements_file),
-        ]
-        subprocess.run(cmd, check=True)
-        print("✅ Requirements installed successfully")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to install requirements: {e}")
-        return False
+    success = True
+
+    for req_file, description in requirements_files:
+        req_path = base_dir / req_file
+        if req_path.exists():
+            print(f"\n   Installing {description}...")
+            try:
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-r",
+                    str(req_path),
+                ]
+                subprocess.run(cmd, check=True, capture_output=True)
+                print(f"   ✅ {description} installed successfully")
+            except subprocess.CalledProcessError as e:
+                print(f"   ⚠️  Failed to install {description}")
+                if req_file == "requirements-tensorflow.txt":
+                    print("   ℹ️  TensorFlow installation failed. You can:")
+                    print("      - Use Google Colab for training")
+                    print("      - Install TensorFlow manually later")
+                    print("      - Use TensorFlow Lite for inference only")
+                elif req_file == "requirements-audio.txt":
+                    print("   ℹ️  Audio recording support failed. You can:")
+                    print("      - Install system audio dependencies first")
+                    print("      - Use file-based inference instead")
+                else:
+                    success = False
+                    print(f"   ❌ Critical dependency failure: {e}")
+
+    return success
 
 
 def check_installed_packages():
@@ -119,10 +137,10 @@ def check_installed_packages():
 
     for package in required_packages:
         try:
-            pkg_resources.get_distribution(package)
+            __import__(package)
             installed.append(package)
             print(f"✅ {package}")
-        except pkg_resources.DistributionNotFound:
+        except ImportError:
             missing.append(package)
             print(f"❌ {package}")
 
@@ -206,8 +224,6 @@ def run_quick_tests():
         import matplotlib
 
         matplotlib.use("Agg")  # Use non-interactive backend
-        import matplotlib.pyplot as plt
-
         print(f"✅ Matplotlib version: {matplotlib.__version__}")
 
         # Test pandas
@@ -226,13 +242,21 @@ def run_quick_tests():
 def print_next_steps():
     """Print next steps for the user."""
     print("\n🚀 Next Steps:")
+    print()
+    print("📋 Installation Options:")
+    print("   • For training: pip install -r requirements-tensorflow.txt")
+    print("   • For inference only: pip install -r requirements-tflite.txt")
+    print("   • For audio recording: pip install -r requirements-audio.txt")
+    print("   • All at once: pip install -r requirements.txt")
+    print()
+    print("🔄 Development Workflow:")
     print("1. Collect audio data and place in data/audio/ directories")
     print("2. Update data/labels.csv with your audio file labels")
     print("3. Preprocess audio data:")
     print(
         "   python scripts/preprocess.py --input data/audio --output data/processed"
     )
-    print("4. Train the model:")
+    print("4. Train the model (requires TensorFlow):")
     print(
         "   python scripts/train.py --data data/processed --output models/yamnet_finetuned"
     )
@@ -244,7 +268,13 @@ def print_next_steps():
     print(
         "   python scripts/infer.py --model models/yamnet.tflite --file your_audio.wav"
     )
-    print("\n📖 See README.md for detailed instructions")
+    print()
+    print("🥧 For Raspberry Pi deployment:")
+    print("   • Use TensorFlow Lite only: pip install tflite-runtime")
+    print("   • Copy .tflite model file to Pi")
+    print("   • Run inference script with --model yamnet.tflite")
+    print()
+    print("📖 See README.md and example.py for detailed instructions")
 
 
 def main():
