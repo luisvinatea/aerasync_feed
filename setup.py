@@ -121,28 +121,29 @@ def check_installed_packages():
     """Check if required packages are installed."""
     print("\n📋 Checking installed packages...")
 
-    required_packages = [
-        "tensorflow",
-        "tensorflow-hub",
-        "librosa",
-        "numpy",
-        "matplotlib",
-        "pandas",
-        "scikit-learn",
-        "seaborn",
-    ]
+    # Map package names to import names
+    package_mapping = {
+        "tensorflow": "tensorflow",
+        "tensorflow-hub": "tensorflow_hub",
+        "librosa": "librosa",
+        "numpy": "numpy",
+        "matplotlib": "matplotlib",
+        "pandas": "pandas",
+        "scikit-learn": "sklearn",
+        "seaborn": "seaborn",
+    }
 
     installed = []
     missing = []
 
-    for package in required_packages:
+    for package_name, import_name in package_mapping.items():
         try:
-            __import__(package)
-            installed.append(package)
-            print(f"✅ {package}")
+            __import__(import_name)
+            installed.append(package_name)
+            print(f"✅ {package_name}")
         except ImportError:
-            missing.append(package)
-            print(f"❌ {package}")
+            missing.append(package_name)
+            print(f"❌ {package_name}")
 
     return len(missing) == 0
 
