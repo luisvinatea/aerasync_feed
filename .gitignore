@@ -54,6 +54,7 @@ cover/
 # Translations
 *.mo
 *.pot
+Anteprojeto de Pesquisa AeraSync Feed.md
 
 # Django stuff:
 *.log
